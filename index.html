@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas do Café — da semente à xícara</title>
+    <meta
+      name="description"
+      content="Tudo sobre café: história, botânica, plantio, colheita, processamento, torra, preparo, mercado mundial, Brasil, saúde e sustentabilidade — com dados atualizados da USDA, ICO, Conab e Banco Mundial."
+    />
+    <meta name="theme-color" content="#140e0b" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <script>
+      // Aplica o tema salvo antes da pintura para evitar "flash".
+      (function () {
+        try {
+          var t = localStorage.getItem("atlas-theme");
+          if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
