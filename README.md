@@ -2,6 +2,8 @@
 
 Um site interativo e completo sobre café — da semente à xícara — com dados oficiais atualizados até **outubro de 2026**.
 
+**Site no ar:** https://willian829.github.io/Coffee/
+
 17 capítulos, mapas, simuladores e gráficos: história, botânica, plantio, colheita, processamento, mapa mundial, Brasil, mercado, torra, preparo, sabor, culturas, saúde, sustentabilidade, glossário, quiz e fontes.
 
 ## Como rodar
@@ -26,7 +28,7 @@ npm run build
 npm run preview
 ```
 
-A pasta `dist/` resultante é estática (roteamento por hash e caminhos relativos), então pode ser publicada em qualquer hospedagem — GitHub Pages, Netlify, Vercel, S3 ou um servidor simples.
+A pasta `dist/` resultante é estática (roteamento por hash e caminhos relativos), então pode ser publicada em qualquer hospedagem. Neste repositório, o workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publica automaticamente no GitHub Pages a cada push na branch `main`.
 
 ## Destaques
 
