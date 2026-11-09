@@ -5,6 +5,8 @@ import { Landmark, Scale, Ship, Leaf, Bird, Handshake, BadgeCheck, Gavel, ArrowR
 import { PageHero, Reveal, Section, NextChapter, SourceNote, Seg, ChartCard, Legend, Callout } from "../components/ui";
 import LineChart, { type Annotation, type LineSeries } from "../components/charts/LineChart";
 import BarList from "../components/charts/BarList";
+import LiveMarket from "../components/LiveMarket";
+import { useLive } from "../lib/live";
 import { annualPrices, monthlyPrices } from "../data/prices";
 import { beanExports, beanImports, icoBalance, icoPricesSep2026, latestYearIndex, worldEndingStocks, marketYears } from "../data/production";
 import { fmt, kgToCentsLb, signed } from "../lib/format";
@@ -36,6 +38,16 @@ function PriceHistory() {
   const [unit, setUnit] = useState<Unit>("lb");
   const conv = (v: number) => (unit === "kg" ? v : kgToCentsLb(v));
   const yFmt = (v: number) => (unit === "kg" ? `US$ ${fmt(v, 2)}` : `${fmt(v, 0)} ¢`);
+  const live = useLive();
+  // série mensal do pacote + meses mais novos (ou revisados) coletados automaticamente do Banco Mundial
+  const monthly = useMemo(() => {
+    const byKey = new Map<number, [number, number, number, number]>();
+    monthlyPrices.filter((r) => r[0] >= 2015).forEach((r) => byKey.set(r[0] * 12 + r[1], r));
+    live?.worldBank?.rows.forEach((r) => byKey.set(r[0] * 12 + r[1], r));
+    return [...byKey.values()].sort((a, b) => a[0] * 12 + a[1] - (b[0] * 12 + b[1]));
+  }, [live]);
+  const lastMonth = monthly[monthly.length - 1];
+  const lastLabel = `${monthsShort[lastMonth[1] - 1].toLowerCase()}/${lastMonth[0]}`;
 
   const series: LineSeries[] = useMemo(() => {
     if (period === "anual") {
@@ -45,13 +57,13 @@ function PriceHistory() {
         { id: "robusta", label: "Robusta", color: "var(--s2)", values: annualPrices.map((r) => ({ x: r[0], y: conv(r[ai + 1]) })) },
       ];
     }
-    const recent = monthlyPrices.filter((r) => r[0] >= 2015);
+    const recent = monthly;
     return [
       { id: "arabica", label: "Arábica", color: "var(--s1)", values: recent.map((r) => ({ x: r[0] + (r[1] - 0.5) / 12, y: conv(r[2]) })) },
       { id: "robusta", label: "Robusta", color: "var(--s2)", values: recent.map((r) => ({ x: r[0] + (r[1] - 0.5) / 12, y: conv(r[3]) })) },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, basis, unit]);
+  }, [period, basis, unit, monthly]);
 
   const xFmt = (x: number) => {
     if (period === "anual") return String(Math.round(x));
@@ -62,11 +74,11 @@ function PriceHistory() {
 
   return (
     <ChartCard
-      title={period === "anual" ? `Preço médio anual, 1960–2025 ${basis === "real" ? "(dólares constantes de 2010)" : "(nominal)"}` : "Preço médio mensal, jan/2015–set/2026 (nominal)"}
+      title={period === "anual" ? `Preço médio anual, 1960–2025 ${basis === "real" ? "(dólares constantes de 2010)" : "(nominal)"}` : `Preço médio mensal, jan/2015–${lastLabel} (nominal)`}
       subtitle={`Banco Mundial (Pink Sheet) · ${unit === "kg" ? "US$ por quilo" : "centavos de dólar por libra-peso"}`}
       controls={
         <>
-          <Seg label="Período" value={period} onChange={setPeriod} options={[{ value: "anual", label: "1960–2025" }, { value: "mensal", label: "2015–2026" }]} />
+          <Seg label="Período" value={period} onChange={setPeriod} options={[{ value: "anual", label: "1960–2025" }, { value: "mensal", label: `2015–${lastMonth[0]}` }]} />
           {period === "anual" && <Seg label="Base" value={basis} onChange={setBasis} options={[{ value: "nominal", label: "Nominal" }, { value: "real", label: "Real" }]} />}
           <Seg label="Unidade" value={unit} onChange={setUnit} options={[{ value: "lb", label: "¢/lb" }, { value: "kg", label: "US$/kg" }]} />
         </>
@@ -96,7 +108,7 @@ function PriceHistory() {
         {basis === "real" && period === "anual"
           ? "Em termos reais, 1976 e 1977 superam 2025: descontada a inflação, o arábica de 1977 custava ~55% mais que o de 2025. "
           : "Em valores nominais, 2025 é o ano mais caro da série. "}
-        Séries do Banco Mundial atualizadas em set–out/2026. 1 kg = 2,2046 lb.
+        Séries do Banco Mundial; a mensal é verificada a cada hora e ganha um ponto novo quando o Banco Mundial publica (início de cada mês). 1 kg = 2,2046 lb.
       </SourceNote>
     </ChartCard>
   );
@@ -278,6 +290,15 @@ export default function Mercado() {
           </div>
         }
       />
+
+      <Section
+        kicker="Mercado agora"
+        title="Cotações atualizadas a cada hora"
+        intro="A bolsa de Nova York forma o preço mundial do arábica; os indicadores CEPEA/ESALQ mostram quanto vale a saca no mercado físico brasileiro. A diferença entre os dois é o “diferencial” — qualidade, frete, impostos e câmbio."
+        tight
+      >
+        <LiveMarket />
+      </Section>
 
       <Section kicker="Histórico" title="66 anos de preços em um gráfico" intro="Geadas no Brasil, o fim do sistema de cotas, crises de superprodução e, em 2025, a disparada para recordes nominais. Passe o mouse para ver cada ano.">
         <Reveal>

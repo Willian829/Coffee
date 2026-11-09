@@ -6,6 +6,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { Award, Factory, MapPin, Ship, TrendingUp, Wheat } from "lucide-react";
 import { PageHero, Reveal, Section, NextChapter, SourceNote, Seg, ChartCard, Legend, Stat, Callout } from "../components/ui";
 import BarList from "../components/charts/BarList";
+import LiveMarket from "../components/LiveMarket";
 import { brRegions, conab2026, consumptionBr, exports2025, mgRegions, stateProduction, type BrRegion } from "../data/brazil";
 import { useElementWidth } from "../lib/hooks";
 import southAmericaJson from "../data/south-america.json";
@@ -289,6 +290,10 @@ export default function Brasil() {
             <Stat value={consumptionBr.bags} digits={1} suffix=" mi" label="sacas consumidas no país" note="2º maior consumidor do mundo (ABIC, nov/24–out/25)" />
           </Reveal>
         </div>
+      </Section>
+
+      <Section kicker="Preço hoje" title="Quanto vale a saca no Brasil" intro="Indicadores CEPEA/ESALQ para o café posto em São Paulo (arábica tipo 6, bebida dura para melhor) e no Espírito Santo (robusta/conilon), atualizados automaticamente." tight>
+        <LiveMarket compact />
       </Section>
 
       <Section kicker="Mapa" title="Onde o Brasil planta café" intro="O café é cultivado em mais de 15 estados. Alterne entre as principais regiões produtoras e o volume colhido por estado.">

@@ -8,6 +8,7 @@ const method = [
   { t: "Consumo per capita", d: "Calculado pelo Atlas: consumo doméstico da USDA (2025/26) × 60 kg ÷ população estimada de 2025 (ONU, Eurostat, IBGE). Para a UE, usa-se a média do bloco. Rankings populares (como os ~12 kg da Finlândia) vêm de outras bases e anos." },
   { t: "Preços", d: "Séries do Banco Mundial (Pink Sheet): indicadores OIC de 'outros suaves' (arábica) e 'robustas', em US$/kg, nominais e em dólares constantes de 2010. Conversão para US¢/lb: ÷ 2,20462 × 100." },
   { t: "Xícaras por dia", d: "Estimativa do Atlas: consumo OIC 2025/26 (180,6 mi sacas = 10,8 mi t de café verde) ÷ 1,19 ≈ 9,1 mi t de torrado por ano (~25 mil t/dia) ÷ 10 g por xícara ≈ 2,5 bilhões de xícaras por dia." },
+  { t: "Atualização automática", d: "A cada hora, um robô no GitHub Actions coleta a cotação de Nova York, os indicadores CEPEA, o dólar e a série mensal do Banco Mundial, e republica o site. Se uma fonte falhar, o último valor válido é mantido. Estatísticas de safra (USDA, OIC, Conab) mudam poucas vezes por ano e são revisadas manualmente." },
   { t: "Ilustrações e modelos", d: "Ilustrações são originais. O simulador climático, a curva de torra e o modelo de cafeína são simplificações didáticas, explicitadas em cada capítulo." },
 ];
 

@@ -1,8 +1,10 @@
 import { Link } from "react-router";
 import { chapters, groups } from "../data/nav";
 import { LogoMark } from "./Header";
+import { useLive, fmtDateTime } from "../lib/live";
 
 export default function Footer() {
+  const live = useLive();
   return (
     <footer className="relative mt-10 overflow-hidden border-t border-line bg-bg-2 no-print">
       <div className="wrap py-16">
@@ -16,7 +18,10 @@ export default function Footer() {
               Um guia aberto e visual sobre o café — da botânica ao mercado global —, construído com dados públicos da USDA, OIC, Conab, Banco
               Mundial, ABIC, Cecafé e literatura científica revisada por pares.
             </p>
-            <p className="mt-4 text-xs text-ink-3">Dados atualizados até outubro de 2026. Conteúdo educativo; não constitui recomendação médica ou de investimento.</p>
+            <p className="mt-4 text-xs text-ink-3">
+              Cotações atualizadas automaticamente a cada hora{live ? ` · última coleta ${fmtDateTime(live.generatedAt)}` : ""}. Estatísticas de safra e consumo até
+              outubro de 2026. Conteúdo educativo; não constitui recomendação médica ou de investimento.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {groups.map((g) => (

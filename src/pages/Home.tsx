@@ -10,6 +10,7 @@ import { productionTotal, worldProduction, latestYearIndex, icoPricesSep2026, wo
 import { annualPrices } from "../data/prices";
 import { fmt, fmtMiBags } from "../lib/format";
 import { scaleThreshold } from "d3-scale";
+import { useLive, fmtDay } from "../lib/live";
 import { line as d3line, curveMonotoneX } from "d3-shape";
 
 const ticker = [
@@ -23,8 +24,25 @@ const ticker = [
   "Safra brasileira 2026 (Conab): 67,6 mi de sacas",
 ];
 
+/** Entradas ao vivo do letreiro (coletadas de hora em hora). */
+function useLiveTicker() {
+  const live = useLive();
+  return useMemo(() => {
+    const out: string[] = [];
+    const kc = live?.arabicaFutures;
+    if (kc) out.push(`Arábica em Nova York agora: ${fmt(kc.price, 2)} ¢/lb (${kc.changePct >= 0 ? "▲" : "▼"} ${fmt(Math.abs(kc.changePct), 2)}%)`);
+    if (live?.cepea) {
+      out.push(`Indicador CEPEA arábica: R$ ${fmt(live.cepea.arabica.brl, 2)}/saca (${fmtDay(live.cepea.arabica.date)})`);
+      out.push(`Indicador CEPEA robusta: R$ ${fmt(live.cepea.robusta.brl, 2)}/saca`);
+    }
+    if (live?.dollar) out.push(`Dólar: R$ ${fmt(live.dollar.brl, 2)}`);
+    return [...out, ...ticker];
+  }, [live]);
+}
+
 function Hero() {
   const ref = useRef<HTMLDivElement>(null);
+  const items = useLiveTicker();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const yBranch = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const yBean1 = useTransform(scrollYProgress, [0, 1], [0, -180]);
@@ -90,7 +108,7 @@ function Hero() {
       </div>
       <div className="relative border-y border-line bg-surface/60 py-3.5 backdrop-blur" aria-label="Destaques">
         <div className="flex w-max animate-marquee gap-12 whitespace-nowrap pl-12 text-sm text-ink-2">
-          {[...ticker, ...ticker].map((t, i) => (
+          {[...items, ...items].map((t, i) => (
             <span key={i} className="flex items-center gap-12">
               {t}
               <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />

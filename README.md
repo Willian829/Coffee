@@ -30,6 +30,19 @@ npm run preview
 
 A pasta `dist/` resultante é estática (roteamento por hash e caminhos relativos), então pode ser publicada em qualquer hospedagem. Neste repositório, o workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publica automaticamente no GitHub Pages a cada push na branch `main`.
 
+## Dados atualizados a cada hora
+
+O workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) roda **de hora em hora** (e a cada push): executa `scripts/update-data.mjs`, que coleta
+
+- a cotação do arábica na bolsa de Nova York (ICE, contrato C — via Yahoo Finance, com atraso);
+- os indicadores CEPEA/ESALQ do arábica e do robusta (R$/saca, dias úteis);
+- o dólar comercial (AwesomeAPI, com reserva no BCE/Frankfurter);
+- a série mensal de preços do Banco Mundial (novo ponto a cada mês),
+
+grava `public/data/live.json`, gera o build e republica o site. Se alguma fonte falhar, o último valor válido é mantido. Uma vez por mês o arquivo é versionado no repositório, o que também evita que o GitHub pause os agendamentos por inatividade. Para atualizar localmente: `npm run data`.
+
+Estatísticas de safra, comércio e consumo (USDA, OIC, Conab, ABIC, Cecafé) saem poucas vezes por ano e continuam sendo atualizadas manualmente.
+
 ## Destaques
 
 | Recurso | Onde |

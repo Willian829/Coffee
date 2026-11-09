@@ -1,13 +1,18 @@
-# Publica o Atlas do Café no GitHub Pages a cada push na branch main.
+# Publica o Atlas do Café no GitHub Pages:
+#  - a cada push na branch main;
+#  - de hora em hora, coletando cotações novas (scripts/update-data.mjs) antes do build.
 name: Deploy no GitHub Pages
 
 on:
   push:
     branches: [main]
+  schedule:
+    # minuto 17 de cada hora (UTC) — evita o pico de agendamentos na hora cheia
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -18,6 +23,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +34,24 @@ jobs:
 
       - run: npm ci
 
+      - name: Coleta dados de mercado
+        id: data
+        run: node scripts/update-data.mjs
+        env:
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+
       - run: npm run build
+
+      # Uma vez por mês versiona os dados coletados no repositório. Isso guarda um histórico
+      # e mantém o repositório ativo (o GitHub pausa agendamentos após 60 dias sem atividade).
+      - name: Snapshot mensal dos dados
+        if: steps.data.outputs.snapshot == 'true' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/live.json
+          git commit -m "Dados de mercado: snapshot mensal" || exit 0
+          git push || echo "push do snapshot falhou; tenta de novo na próxima hora"
 
       - uses: actions/configure-pages@v5
 
