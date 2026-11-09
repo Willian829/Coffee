@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 /** Formato de public/data/live.json (gerado por scripts/update-data.mjs). */
-export type CepeaIndicator = { date: string; brl: number; usd: number; dayPct: number; monthPct: number; history: [string, number][] };
+export type CepeaIndicator = { date: string; brl: number; usd: number | null; dayPct: number; monthPct: number | null; history: [string, number][]; via?: string };
 
 export type LiveData = {
   generatedAt: string;

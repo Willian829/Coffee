@@ -68,7 +68,9 @@ async function arabicaFutures() {
 }
 
 /* ───────────── Indicadores CEPEA/ESALQ (arábica e robusta, R$/saca) ───────────── */
-async function cepea() {
+const isoDay = (d) => d.split("/").reverse().join("-");
+
+async function cepeaOfficial() {
   const html = await get("https://www.cepea.org.br/br/indicador/cafe.aspx");
   const table = (id) => {
     const t = new RegExp(`<table[^>]*id="${id}"[\\s\\S]*?</table>`).exec(html)?.[0];
@@ -77,18 +79,50 @@ async function cepea() {
       .map((m) => [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]+>/g, "").trim()))
       .filter((c) => /^\d{2}\/\d{2}\/\d{4}$/.test(c[0] ?? ""));
     if (!rows.length) throw new Error(`tabela ${id} vazia`);
-    const iso = (d) => d.split("/").reverse().join("-");
     const [latest] = rows;
     return {
-      date: iso(latest[0]),
+      date: isoDay(latest[0]),
       brl: brNum(latest[1]),
       dayPct: brNum(latest[2]),
       monthPct: brNum(latest[3]),
       usd: brNum(latest[4]),
-      history: rows.map((c) => [iso(c[0]), brNum(c[1])]).reverse(),
+      history: rows.map((c) => [isoDay(c[0]), brNum(c[1])]).reverse(),
+      via: "CEPEA",
     };
   };
   return { arabica: table("imagenet-indicador1"), robusta: table("imagenet-indicador2") };
+}
+
+/** Reserva: o portal Notícias Agrícolas republica os indicadores CEPEA (uma tabela por dia). */
+async function cepeaNoticiasAgricolas(usdBrl) {
+  const one = async (slug) => {
+    const html = await get(`https://www.noticiasagricolas.com.br/cotacoes/cafe/${slug}`);
+    const rows = [...html.matchAll(/<table class="cot-fisicas">([\s\S]*?)<\/table>/g)]
+      .map((t) => [...t[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((c) => c[1].replace(/<[^>]+>/g, "").trim()))
+      .filter((c) => /^\d{2}\/\d{2}\/\d{4}$/.test(c[0] ?? ""));
+    if (!rows.length) throw new Error(`sem tabelas em ${slug}`);
+    const [latest] = rows;
+    const brl = brNum(latest[1]);
+    return {
+      date: isoDay(latest[0]),
+      brl,
+      dayPct: brNum(latest[2]),
+      monthPct: null,
+      usd: usdBrl ? round(brl / usdBrl) : null,
+      history: rows.map((c) => [isoDay(c[0]), brNum(c[1])]).reverse(),
+      via: "Notícias Agrícolas",
+    };
+  };
+  return { arabica: await one("indicador-cepea-esalq-cafe-arabica"), robusta: await one("indicador-cepea-esalq-cafe-conillon") };
+}
+
+async function cepea(usdBrl) {
+  try {
+    return await cepeaOfficial();
+  } catch (e) {
+    log("CEPEA (site oficial) falhou:", e.message, "— tentando Notícias Agrícolas");
+    return await cepeaNoticiasAgricolas(usdBrl);
+  }
 }
 
 /* ───────────── Dólar comercial ───────────── */
@@ -99,9 +133,24 @@ async function dollar() {
     return { brl: round(Number(q.bid), 4), changePct: round(Number(q.pctChange)), time: new Date(Number(q.timestamp) * 1000).toISOString(), source: "AwesomeAPI" };
   } catch (e) {
     log("AwesomeAPI falhou:", e.message);
-    const j = await get("https://api.frankfurter.app/latest?from=USD&to=BRL", { type: "json" });
-    return { brl: round(j.rates.BRL, 4), changePct: null, time: new Date(`${j.date}T16:00:00Z`).toISOString(), source: "Frankfurter (BCE)" };
   }
+  try {
+    const j = await get("https://query1.finance.yahoo.com/v8/finance/chart/BRL=X?range=5d&interval=1d", { type: "json" });
+    const r = j.chart.result[0];
+    const closes = r.indicators.quote[0].close.filter((c) => c != null);
+    const price = r.meta.regularMarketPrice;
+    const prev = closes.length > 1 ? closes[closes.length - 2] : null;
+    return {
+      brl: round(price, 4),
+      changePct: prev ? round(((price - prev) / prev) * 100) : null,
+      time: new Date(r.meta.regularMarketTime * 1000).toISOString(),
+      source: "Yahoo Finance",
+    };
+  } catch (e) {
+    log("Yahoo (BRL=X) falhou:", e.message);
+  }
+  const j = await get("https://api.frankfurter.app/latest?from=USD&to=BRL", { type: "json" });
+  return { brl: round(j.rates.BRL, 4), changePct: null, time: new Date(`${j.date}T16:00:00Z`).toISOString(), source: "Frankfurter (BCE)" };
 }
 
 /* ───────────── Banco Mundial — série mensal (só baixa quando o arquivo muda) ───────────── */
@@ -186,8 +235,8 @@ const data = { ...prev, generatedAt: now, status: {} };
 
 const tasks = {
   arabicaFutures: () => arabicaFutures(),
-  cepea: () => cepea(),
   dollar: () => dollar(),
+  cepea: () => cepea(data.dollar?.brl),
   worldBank: () => worldBankMonthly(prev.worldBank),
 };
 

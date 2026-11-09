@@ -51,12 +51,15 @@ function Card({ kicker, children, note }: { kicker: string; children: React.Reac
 
 function CepeaCard({ title, ind }: { title: string; ind: CepeaIndicator }) {
   return (
-    <Card kicker={title} note={`Indicador de ${fmtDay(ind.date)} · variação no mês ${signed(ind.monthPct, 2)}%`}>
+    <Card
+      kicker={title}
+      note={`Indicador de ${fmtDay(ind.date)}${ind.monthPct != null ? ` · variação no mês ${signed(ind.monthPct, 2)}%` : ""}${ind.via && ind.via !== "CEPEA" ? ` · via ${ind.via}` : ""}`}
+    >
       <p className="display text-[2.4rem] leading-none">
         <span className="text-xl text-ink-3">R$ </span>
         {fmt(ind.brl, 2)}
       </p>
-      <p className="mt-1 text-sm text-ink-2">por saca de 60 kg · US$ {fmt(ind.usd, 2)}</p>
+      <p className="mt-1 text-sm text-ink-2">por saca de 60 kg{ind.usd != null ? ` · US$ ${fmt(ind.usd, 2)}` : ""}</p>
       <div className="mt-3">
         <Change pct={ind.dayPct} suffix=" no dia" />
       </div>
